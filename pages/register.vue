@@ -12,7 +12,7 @@
 </template>
 
 <script>
-import firebase from '~/plugins/firebase'
+import firebase from '~/plugins/snspj'
 export default {
   data() {
     return {
