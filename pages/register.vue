@@ -1,70 +1,66 @@
 <template>
-  <div
-    class="register"
-  >
-    <form
-      class="form"
-      @submit.prevent
-    >
-      <label class="label">
-        <span class="label">
-          email
-        </span>
-        <input
-          class="input"
-          type="text"
-          v-model="email"
-        >
-      </label>
-      <label class="label">
-        <span class="label">
-          password
-        </span>
-        <input
-          class="input"
-          type="password"
-          v-model="password"
-        >
-      </label>
-      <label class="label">
-        <span class="label">
-          name
-        </span>
-        <input
-          class="input"
-          type="text"
-          v-model="updateName"
-        >
-      </label>
-      <button
-        class="button"
-        type="submit"
-        @click="register"
-      >
-        Register
-      </button>
-    </form>
+  <div class="register">
+    <input type="text" v-model="name" placeholder="ユーザーネーム" required />
+    <br>
+    <input type="email" v-model="email" placeholder="メールアドレス" required />
+    <br>
+    <input type="password" v-model="password" placeholder="パスワード" required />
+    <br>
+    <button @click="register">新規登録</button>
   </div>
 </template>
- 
+
 <script>
+import firebase from '~/plugins/firebase'
 export default {
-  computed: {
-    user () {
-      return this.$store.getters['user']
-    },
-  },
-  data () {
+  data() {
     return {
-      email: '',
-      password: '',
-      updateName: '',
+      name: null,
+      email: null,
+      password: null,
     }
   },
   methods: {
-    register () {
-      this.$store.dispatch('register', {email: this.email, password: this.password, name: this.updateName})
-    }
+     async register() {
+      try {
+        await this.$axios.post("http://localhost:8000/api/auth/register", {
+          name: this.name,
+        });
+        this.$router.push("/login");
+      } catch {
+        alert("ユーザーネームを入力してください。");
+      }
+
+       if (!this.email || !this.password) {
+        alert('メールアドレスまたはパスワードが入力されていません。')
+        return
+      }
+      firebase
+        .auth()
+        .createUserWithEmailAndPassword(this.email, this.password)
+        .then((data) => {
+          data.user.sendEmailVerification().then(() => {
+            this.$router.replace('/login')
+          })
+        })
+        .catch((error) => {
+          switch (error.code) {
+            case 'auth/invalid-email':
+              alert('メールアドレスの形式が違います。')
+              break
+            case 'auth/email-already-in-use':
+              alert('このメールアドレスはすでに使われています。')
+              break
+            case 'auth/weak-password':
+              alert('パスワードは6文字以上で入力してください。')
+              break
+            default:
+              alert('エラーが起きました。しばらくしてから再度お試しください。')
+              break
+          }
+        })
+
+     },
   },
 }
 </script>
